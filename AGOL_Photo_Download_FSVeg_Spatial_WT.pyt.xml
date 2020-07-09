@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<metadata xml:lang="en"><Esri><CreaDate>20190919</CreaDate><CreaTime>15142600</CreaTime><ArcGISFormat>1.0</ArcGISFormat><ArcGISstyle>FGDC CSDGM Metadata</ArcGISstyle><SyncOnce>TRUE</SyncOnce><ModDate>20200520</ModDate><ModTime>112510</ModTime><scaleRange><minScale>150000000</minScale><maxScale>5000</maxScale></scaleRange><ArcGISProfile>FGDC</ArcGISProfile></Esri><toolbox name="AGOL_Photo_Download_FSVeg_Spatial_WT" alias=""><arcToolboxHelpPath>e:\arcgis\desktop10.7\Help\gp</arcToolboxHelpPath><toolsets/></toolbox><dataIdInfo><idCitation><resTitle>AGOL_Photo_Download_FSVeg_Spatial_WT</resTitle></idCitation><idPurp>This toolbox is designed to download photos from the Survery 123 FSVeg Spatial Walk Through form. You must have an Arcgis Online account and the Survery 123 FSVeg Spatial Walk Through form must be shared with you. 
+
+Within the FSVeg Spatial Walk Through form is a sub form called "plot_group_1" These plot groups and associated photos are returned to the end user of this toolbox. The expected output is a folder containing all of the plots photos as jpegs and a file geodatabase containing the plot_group_1 locations. You can view the photos associated with each point in ArcMap by using the HTML popup tool found on the "Tools" toolbar in ArcMap. Additionally you can see the file name of each photo associated with a plot in the field “PhotoNames” in the attribute table of output feature class.
+
+
+For more information about using this tool and its expected outputs please cut and paste this address into a web browser:
+
+https://usfs.box.com/v/AGOLFSVegWTPhotoDownload
+
+
+</idPurp><idAbs>&lt;DIV STYLE="text-align:Left;"&gt;&lt;P&gt;&lt;SPAN&gt;This toolbox is designed to download photos from the Survery 123 FSVeg Spatial Walk Through form. You must have an Arcgis Online account and the Survery 123 FSVeg Spatial Walk Through form must be shared with you. &lt;/SPAN&gt;&lt;/P&gt;&lt;/DIV&gt;</idAbs></dataIdInfo><distInfo><distributor><distorFormat><formatName>ArcToolbox Toolbox</formatName></distorFormat></distributor></distInfo><mdHrLv><ScopeCd value="005"></ScopeCd></mdHrLv></metadata>
