@@ -84,7 +84,7 @@ class DownloadAGOLPhotos(object):
 
         arcpy.env.overwriteOutput = True
 
-        AGOLGroupUrl =  r'https://services1.arcgis.com/gGHDlz6USftL5Pau/arcgis/rest/services/service_50c54e4e443d41c8b5a61958ced0ed82/FeatureServer'
+        AGOLGroupUrl =  r'https://services1.arcgis.com/gGHDlz6USftL5Pau/arcgis/rest/services/survey123_a15e8159fac04b6f86e6cee04a785793_stakeholder/FeatureServer'
         projection = '''GEOGCS['GCS_WGS_1984',DATUM['D_WGS_1984',SPHEROID['WGS_1984',6378137.0,298.257223563]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]]'''
 
         def urlRequest(request,*urlparams):
