@@ -1,6 +1,8 @@
 ######################################
-# This toolbox was developed by Fred Kellner, RedCastle Resources Contract Remote Sensing Analsyst to the Region 1 Geospatial Group. For Question regarding the code in this script please
-# me at frederickkellner@fs.fed.us
+# This toolbox was developed by Fred Kellner,
+# RedCastle Resources Contract Remote Sensing Analsyst to the Region 1
+# Geospatial Group. For Question regarding the code in this script please
+# contact me at frederickkellner@usda.gov
 ######################################
 import arcpy
 
@@ -72,8 +74,9 @@ class DownloadAGOLPhotos(object):
         import sys
         import arcpy
 
-        sys.path.append('C:\Data\FSVeg_Sp_WT_AGOL_PhototDownload')
-        from AGOL_Photo_Download_FSVeg_Spatial_WT_Functions import *
+        sys.path.append(r'C:\Data\FSVeg_Sp_WT_AGOL_PhototDownload\NRGG')
+        import FSVegAGOLPhotoDownloadTools as NRGG
+
 
         arcpy.env.overwriteOutput = True
 
@@ -85,14 +88,14 @@ class DownloadAGOLPhotos(object):
 
         AGOLFeatureServiceURL =  r'https://services1.arcgis.com/gGHDlz6USftL5Pau/arcgis/rest/services/survey123_a15e8159fac04b6f86e6cee04a785793_stakeholder/FeatureServer'
 
-        AGOLToken = generateAGOLToken(AGOLUsername, AGOLPassword)
-        AGOLFeatureService = AGOLFeatureServiceRESTEndPoints(AGOLFeatureServiceURL, AGOLToken, AGOLFeatureServiceLayerNumber)
+        AGOLToken = NRGG.generateAGOLToken(AGOLUsername, AGOLPassword)
+        AGOLFeatureService = NRGG.AGOLFeatureServiceRESTEndPoints(AGOLFeatureServiceURL, AGOLToken, AGOLFeatureServiceLayerNumber)
 
         if AGOLFeatureService.layerHasPhotoAttachments():
             if areaofInterest:
-                projectedFeatueclassPath = projectFeatureClassToGCSWGS_84IntoDefaultWorkspace(areaofInterest)
-                areaOfInterestVertices = getVerticesFromProjectedFeatureClassAreaofInterest(projectedFeatueclassPath)
-                dictionaryOfAreaOfInterestVerticesForEndPointURL = makeAreaOfInterestDictionaryForURLEndPoint(areaOfInterestVertices)
+                projectedFeatueclassPath = NRGG.projectFeatureClassToGCSWGS_84IntoDefaultWorkspace(areaofInterest)
+                areaOfInterestVertices = NRGG.getVerticesFromProjectedFeatureClassAreaofInterest(projectedFeatueclassPath)
+                dictionaryOfAreaOfInterestVerticesForEndPointURL = NRGG.makeAreaOfInterestDictionaryForURLEndPoint(areaOfInterestVertices)
                 AGOLFeatureServiceObjectIDs = AGOLFeatureService.getFeatureServiceObjectIdsWithinAreaOfInterest(dictionaryOfAreaOfInterestVerticesForEndPointURL)
             else:
                 AGOLFeatureServiceObjectIDs = AGOLFeatureService.getFeatureServiceObjectIds()
@@ -100,16 +103,19 @@ class DownloadAGOLPhotos(object):
             raise Exception ('The AGOL Feature Service Layer that you want to download photos from does not have photos attached')
 
         AGOLFeatureServiceObjectIDsWithAttachments = AGOLFeatureService.queryFeatureServiceObjectIDsforAttachments(AGOLFeatureServiceObjectIDs)
-        satusURLForReplicaOfFeaturesWithAttachments = getStatusURLForFeatureServiceReplicaForPhotoAttachments(AGOLFeatureService.name(), AGOLFeatureService.url, AGOLFeatureService.token, AGOLFeatureService.layerNumber, AGOLFeatureServiceObjectIDsWithAttachments)
+        satusURLForReplicaOfFeaturesWithAttachments = NRGG.getStatusURLForFeatureServiceReplicaForPhotoAttachments(AGOLFeatureService.name(), AGOLFeatureService.url, AGOLFeatureService.token, AGOLFeatureService.layerNumber, AGOLFeatureServiceObjectIDsWithAttachments)
         arcpy.AddMessage(satusURLForReplicaOfFeaturesWithAttachments)
-        resutlURLForReplica = waitForAGOLFeatureServiceReplica(satusURLForReplicaOfFeaturesWithAttachments, AGOLToken)
-        pathOfZippedReplicaGDB = downloadAGOLReplicaInFGDB(resutlURLForReplica, AGOLFeatureService.token, AGOLFeatureService.name(), outputLocation)
-        unzipAGOLReplicaGDBAndRenameToFSVeg(pathOfZippedReplicaGDB, outputLocation)
-        renamePlotsToFSVeg_Spatial_WT_PhotosInGDB(outputLocation)
-        FSVegGlobalIDDictionary = createDictionaryOfFSVegGlobadIDsPlotSettingAndPlotNumber(outputLocation)
-        dictionaryOfFSVegPhotoNames = writeAttachedPhotosAndMakeDictionaryOfFSVegPhotoNames(outputLocation, FSVegGlobalIDDictionary)
-        addPhotoNameFieldAndPopulateFinalFSVegFeatureClass(outputLocation, dictionaryOfFSVegPhotoNames)
-        DeleteUneededFiedsFromFinalFSVegFeatureclass(outputLocation)
+        resutlURLForReplica = NRGG.waitForAGOLFeatureServiceReplica(satusURLForReplicaOfFeaturesWithAttachments, AGOLToken)
+        pathOfZippedReplicaGDB = NRGG.downloadAGOLReplicaInFGDB(resutlURLForReplica, AGOLFeatureService.token, AGOLFeatureService.name(), outputLocation)
+        NRGG.unzipAGOLReplicaGDBAndRenameToFSVeg(pathOfZippedReplicaGDB, outputLocation)
+        NRGG.renamePlotsToFSVeg_Spatial_WT_PhotosInGDB(outputLocation)
+        FSVegGlobalIDDictionary = NRGG.createDictionaryOfFSVegGlobadIDsPlotSettingAndPlotNumber(outputLocation)
+        dictionaryOfFSVegPhotoNames = NRGG.writeAttachedPhotosAndMakeDictionaryOfFSVegPhotoNames(outputLocation, FSVegGlobalIDDictionary)
+        NRGG.addPhotoNameFieldAndPopulateFinalFSVegFeatureClass(outputLocation, dictionaryOfFSVegPhotoNames)
+        NRGG.DeleteUneededFiedsFromFinalFSVegFeatureclass(outputLocation)
+        NRGG.deleteFeaturesWithIncorrectSettingIDValues(outputLocation)
+        NRGG.alterPlotSettingIDFieldName(outputLocation)
+        
 
 
 
