@@ -8,6 +8,19 @@ import arcpy
 import requests
 
 
+def listStringJoiner(inputList):
+  stringJoinedList =  ",".join(str(itemFromList) for itemFromList in inputList)
+  return stringJoinedList
+    
+
+def errorMessageGenerator(textForErrorMessage):
+    errorText = '''There was an error {}.
+    If you believe there was an mistake 
+    entering parameters please try the tool again.
+    This program will exit in ten seconds'''.format(textForErrorMessage)
+    return errorText
+
+
 def urlRequest(inputUrl, *urlParameters):
     try:
         urlurlResponse = urllib.urlopen(inputUrl, "".join(urlParameters)).read()
@@ -21,8 +34,24 @@ def urlRequest(inputUrl, *urlParameters):
         time.sleep(10)
         exit()
 
+def jsonObjectErrorHandling(urlResponse, keyValue, errorMessage):
+    try:
+        return json.laods(urlResponse)[keyValue]
+    except:
+        arcpy.AddMessage(errorMessage)
+        time.sleep(10)
+        exit()
+
 
 def generateAGOLToken(AGOLUsername, AGOLPassword):
+    """Generates an Token for use with the REST
+    API for ArcGIS Online
+    """
+    errorText = '''generating an AGOL token.
+      It is likely that you entered an incorrect
+      username or password'''
+      
+    errorMessage =  errorMessageGenerator(errorText)
     parameters = urllib.urlencode(
         {
             "username": AGOLUsername,
@@ -36,24 +65,13 @@ def generateAGOLToken(AGOLUsername, AGOLPassword):
 
     tokenURL = "{0}/sharing/rest/generateToken?".format("https://www.arcgis.com")
     urlResponse = urlRequest(tokenURL, parameters)
-
-    try:
-        AGOLtoken = json.loads(urlResponse)["token"]
-        return AGOLtoken
-    except:
-        arcpy.AddMessage(
-            "There was a problem generating an AGOL token.\
-      It is likely that you entered an incorrect username or password.\
-      Please try again. This program will exit in ten seconds"
-        )
-        time.sleep(10)
-        exit()
-
+    AGOLToken = jsonObjectErrorHandling(urlResponse, "token", errorMessage)
+    return AGOLToken
 
 class AGOLFeatureServiceRESTEndPoints:
     """Leverages the ESRI Rest API to return information about feature services
     and REST URL endpoints for AGOL using Python 2.7 because the FS is still
-    using desktop in Citrix
+    using ArcGIS Desktop at the Virtual Data Center
     """
 
     def __init__(self, AGOLFeatureServiceURL, AGOLToken, AGOLFeatureServiceLayerNumber):
@@ -62,22 +80,30 @@ class AGOLFeatureServiceRESTEndPoints:
         self.layerNumber = AGOLFeatureServiceLayerNumber
 
     def layerHasPhotoAttachments(self):
-        areThereAttachments = urlRequest(
+        errorText = 'when trying to see if the input feature service \
+            has attachments or the input feature service does not allow attachments.'
+        errorMessage =  errorMessageGenerator(errorText)
+        areThereAttachmentsURL = urlRequest(
             "{0}/{1}?&f=json&token={2}".format(self.url, self.layerNumber, self.token)
         )
-        if json.loads(areThereAttachments)["hasAttachments"]:
+        if jsonObjectErrorHandling(areThereAttachmentsURL, "hasAttachments", errorMessage):
             return True
 
     def name(self):
+
         """Returns the name of the AGOL Feature
-         Service from the input AGOL Service URL
+         Service from the input AGOL Feature Service URL
         """
-        AGOLFeatureServiceName = urlRequest(
+        errorText = 'There was an error trying to retreive \
+        the name of the input feature service'
+        errorMessage =  errorMessageGenerator(errorText)
+
+        AGOLFeatureServiceNameURL = urlRequest(
             "{0}?&f=json&token={1}".format(self.url, self.token)
         )
-        AGOLFeatureServiceName = str(
-            json.loads(AGOLFeatureServiceName)["layers"][0]["name"]
-        )
+        AGOLFeatureServiceName = jsonObjectErrorHandling(AGOLFeatureServiceNameURL, "layers", errorMessage)
+        AGOLFeatureServiceName = AGOLFeatureServiceName[0]
+        AGOLFeatureServiceName = str(AGOLFeatureServiceName["name"])
         return AGOLFeatureServiceName
 
     def getFeatureServiceObjectIds(self):
@@ -86,16 +112,18 @@ class AGOLFeatureServiceRESTEndPoints:
         for example the ObjectIDs could number 1,2,3,5,6,12,13... this
         is a result of delete field collected data after syncing
         """
-        featureServiceObjectIDs = urlRequest(
+        errorText = '''when trying to retrieve the ObjectIds 
+        for the input feature service''' 
+        errorMessage =  errorMessageGenerator(errorText)
+
+        featureServiceObjectIDsURL = urlRequest(
             "{0}/{1}/query?where=1=1&returnIdsOnly=true&f=json&token={2}".format(
                 self.url, self.layerNumber, self.token
             )
         )
-        featureServiceObjectIDs = json.loads(featureServiceObjectIDs)["objectIds"][:]
-        featureServiceObjectIDs = ",".join(
-            str(featureServiceObjectID)
-            for featureServiceObjectID in featureServiceObjectIDs
-        )
+        featureServiceObjectIDs = jsonObjectErrorHandling(featureServiceObjectIDsURL ,"objectIds", errorMessage)
+        featureServiceObjectIDs = featureServiceObjectIDs[:]
+        featureServiceObjectIDs = listStringJoiner(featureServiceObjectIDs)
         return featureServiceObjectIDs
 
     def getFeatureServiceObjectIdsWithinAreaOfInterest(
@@ -107,6 +135,11 @@ class AGOLFeatureServiceRESTEndPoints:
         for example the ObjectIDs could number 1,2,3,5,6,12,13... this
         is a result of delete field collected data after syncing
         """
+        errorText = '''when trying to find points
+        that fall within the provided area of interest'''
+        
+        errorMessage =  errorMessageGenerator(errorText)
+
         urlEncodedParameters = urllib.urlencode(
             {"geometryType": "esriGeometryPolygon",
             "spatialRel": "esriSpatialRelContains",
@@ -114,42 +147,32 @@ class AGOLFeatureServiceRESTEndPoints:
             "geometry": areaOfInterestVerticesDictionary
             }
         )
-        urlRequestString = "{0}/{1}/query?where=1=1&returnIdsOnly=true&f=json&token={2}"
-        featureServiceObjectIDs = urlRequest(
-            urlRequestString.format(
-                self.url, self.layerNumber, self.token
-            ), urlEncodedParameters
-        )
-        featureServiceObjectIDs = json.loads(featureServiceObjectIDs)["objectIds"][:]
-        featureServiceObjectIDs = ",".join(
-            str(featureServiceObjectID)
-            for featureServiceObjectID in featureServiceObjectIDs
-        )
+        urlRequestString = "{0}/{1}/query?where=1=1&returnIdsOnly=true&f=json&token={2}".format( self.url, self.layerNumber, self.token)
+        featureServiceObjectIDs = urlRequest(urlRequestString, urlEncodedParameters)
+        featureServiceObjectIDs = jsonObjectErrorHandling(featureServiceObjectIDs, "objectIds", errorMessage)
+        featureServiceObjectIDs = featureServiceObjectIDs[:]
+        featureServiceObjectIDs = listStringJoiner(featureServiceObjectID)
         return featureServiceObjectIDs
 
     def queryFeatureServiceObjectIDsforAttachments(self, AGOLfeatureServiceOjbectIDs):
         """Returns the ObjectIds for each feature in the AGOL Feature Service
         which has attachments.
         """
+        errorText = '''when trying to retrieve objectIDs for 
+        input feature service'''
+        errorMessage =  errorMessageGenerator(errorText)
+
         urlEncodedParameters = urllib.urlencode(
             {"objectIds": AGOLfeatureServiceOjbectIDs}
         )
-        urlRequestString = "{0}/{1}/queryAttachments?&f=json&token={2}"
-        AGOLfeatureServiceObjectIDsThatHaveAttachments = urlRequest(
-            urlRequestString.format(self.url, self.layerNumber, self.token),
-            urlEncodedParameters,
-        )
-        AGOLfeatureServiceObjectIDsThatHaveAttachments = json.loads(
-            AGOLfeatureServiceObjectIDsThatHaveAttachments
-        )["attachmentGroups"]
+        urlRequestString = "{0}/{1}/queryAttachments?&f=json&token={2}".format(self.url, self.layerNumber, self.token)
+        featureServiceObjectIDsThatHaveAttachmentsURL = urlRequest(urlRequestString, urlEncodedParameters)
+        AGOLfeatureServiceObjectIDsThatHaveAttachments = jsonObjectErrorHandling(featureServiceObjectIDsThatHaveAttachmentsURL, "attachmentGroups", errorMessage)
         AGOLfeatureServiceObjectIDsThatHaveAttachments = [
             objectIDWithPhoto["parentObjectId"]
             for objectIDWithPhoto in AGOLfeatureServiceObjectIDsThatHaveAttachments
         ]
-        AGOLfeatureServiceObjectIDsThatHaveAttachments = ",".join(
-            str(featureServiceObjectIDsThatHaveAttachment)
-            for featureServiceObjectIDsThatHaveAttachment in AGOLfeatureServiceObjectIDsThatHaveAttachments
-        )
+        AGOLfeatureServiceObjectIDsThatHaveAttachments = listStringJoiner(AGOLfeatureServiceObjectIDsThatHaveAttachments)
         return AGOLfeatureServiceObjectIDsThatHaveAttachments
 
 
@@ -170,6 +193,9 @@ def getStatusURLForFeatureServiceReplicaForPhotoAttachments(
     AGOLFeatureServiceLayerNumber,
     AGOLFeatureServiceObjectIDs,
 ):
+    errorText = '''trying to retrieve the status URL for the replica
+    of the AGOL Feature Service'''
+    errorMessage = errorMessageGenerator(errorText)
     replicaParameters = urllib.urlencode(
         {
             "name": AGOLFeatureServiceName,
@@ -196,9 +222,7 @@ def getStatusURLForFeatureServiceReplicaForPhotoAttachments(
     AGOLCreateFeatureServieReplicaURLRequest = urlRequest(
         AGOLCreateFeatureServieReplicaURL, replicaParameters
     )
-    AGOLFeatureServiceReplicaStatusURL = json.loads(
-        AGOLCreateFeatureServieReplicaURLRequest
-    )["statusUrl"]
+    AGOLFeatureServiceReplicaStatusURL = json.loads(AGOLCreateFeatureServieReplicaURLRequest)["statusUrl"]
     return AGOLFeatureServiceReplicaStatusURL
 
 
@@ -258,33 +282,42 @@ def downloadAGOLReplicaInFGDB(
             chunk += sizeOfFile / 10
     return fullPathAGOLReplicaOfZipFile
 
+class areaOfInterestHandlingForSpatialFilteringAGOLFeatureService:
+    """A class to handle an area of interest for spatial filtering
+    an AGOL feature service
+    """
+    
+    def __init__(self, areaOfInterestFeatureClassPath):
+        self.pathToAOI = areaOfInterestFeatureClassPath
+        
+    def projectFeatureClassToGCSWGS84IntoDefaultWorkspace(self):
+        """Takes and area of interest and projects the 
+        data to a Geographic Coordinate System of
+        WGS_84
+        """
+        projection = """GEOGCS['GCS_WGS_1984',DATUM['D_WGS_1984',SPHEROID['WGS_1984',6378137.0,298.257223563]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]]"""
+        arcpy.Project_management(
+            self.pathToAOI, arcpy.env.workspace + "/projectedAreaofInterest", projection
+        )
+        return arcpy.env.workspace + "/projectedAreaofInterest"
 
-def projectFeatureClassToGCSWGS_84IntoDefaultWorkspace(featureClass):
-    projection = """GEOGCS['GCS_WGS_1984',DATUM['D_WGS_1984',SPHEROID['WGS_1984',6378137.0,298.257223563]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]]"""
-    arcpy.Project_management(
-        featureClass, arcpy.env.workspace + "/projectedAreaofInterest", projection
-    )
-    return arcpy.env.workspace + "/projectedAreaofInterest"
+    def getVerticesFromProjectedFeatureClassAreaofInterest(self, projectedAreaOfInterestFeatureClass):
+        arcpy.MakeFeatureLayer_management(projectedAreaOfInterestFeatureClass, "projectedAreaofInterest")
+        areaOfInterestVertices = []
+        cursor = arcpy.da.SearchCursor("projectedAreaofInterest", ["OID@", "SHAPE@"])
+        locationOfShapeFieldInReturnedCursorRow = 1
+        for row in cursor:
+            for points in row[locationOfShapeFieldInReturnedCursorRow]:
+                for point in points:
+                    if point:
+                        areaOfInterestVertices.append([point.X, point.Y])
+        return areaOfInterestVertices
 
-
-def getVerticesFromProjectedFeatureClassAreaofInterest(featureClass):
-    arcpy.MakeFeatureLayer_management(featureClass, "projectedAreaofInterest")
-    areaOfInterestVertices = []
-    cursor = arcpy.da.SearchCursor("projectedAreaofInterest", ["OID@", "SHAPE@"])
-    for row in cursor:
-        for points in row[1]:
-            for point in points:
-                if point:
-                    areaOfInterestVertices.append([point.X, point.Y])
-    return areaOfInterestVertices
-
-
-def makeAreaOfInterestDictionaryForURLEndPoint(areaOfInterestVertices):
-    areaOfInterestVerticesDictionary = {}
-    areaOfInterestVerticesDictionary["rings"] = [areaOfInterestVertices]
-    #areaOfInterestVerticesDictionary["spatialReference"] = {"wkid": 4326}
-    return areaOfInterestVerticesDictionary
-
+    def makeAreaOfInterestDictionaryForURLEndPoint(self, areaOfInterestVertices):
+        areaOfInterestVerticesDictionary = {}
+        areaOfInterestVerticesDictionary["rings"] = [areaOfInterestVertices]
+        #areaOfInterestVerticesDictionary["spatialReference"] = {"wkid": 4326}
+        return areaOfInterestVerticesDictionary
 
 def unzipAGOLReplicaGDBAndRenameToFSVeg(pathOfZippedReplicaGDB, outputLocation):
     with zipfile.ZipFile(pathOfZippedReplicaGDB, "r") as zipGDB:
@@ -295,7 +328,6 @@ def unzipAGOLReplicaGDBAndRenameToFSVeg(pathOfZippedReplicaGDB, outputLocation):
             outputLocation + "/" + uniqueAGOLGenerateReplicaGDBName, "FSVeg_Spatial_WT"
         )
 
-
 def renamePlotsToFSVeg_Spatial_WT_PhotosInGDB(outputLocation):
     arcpy.env.workspace = outputLocation + "/FSVeg_Spatial_WT.gdb"
     # I use FC to FC here rather than rename as it allows for all the attachment
@@ -304,10 +336,10 @@ def renamePlotsToFSVeg_Spatial_WT_PhotosInGDB(outputLocation):
     arcpy.arcpy.FeatureClassToFeatureClass_conversion(
         "plots", outputLocation + "/FSVeg_Spatial_WT.gdb", "FSVeg_Spatial_WT_Photos"
     )
+    
     arcpy.Delete_management(outputLocation + "/FSVeg_Spatial_WT.gdb/plots")
     arcpy.Delete_management(outputLocation + "/FSVeg_Spatial_WT.gdb/plots__ATTACH")
     arcpy.Delete_management(outputLocation + "/FSVeg_Spatial_WT.gdb/plots__ATTACHREL")
-
 
 def createDictionaryOfFSVegGlobadIDsPlotSettingAndPlotNumber(outputLocation):
     arcpy.env.workspace = outputLocation + "/FSVeg_Spatial_WT.gdb"
@@ -396,6 +428,7 @@ def addPhotoNameFieldAndPopulateFinalFSVegFeatureClass(
     )
     for row in cursor:
         if row[0] in photoNameDictionary:
+            #row[1] = ",".join(photoNameDictionary[row[0]])
             row[1] = ",".join(photoNameDictionary[row[0]])
         cursor.updateRow(row)
     edit.stopOperation()
@@ -419,10 +452,10 @@ def DeleteUneededFiedsFromFinalFSVegFeatureclass(outputLocation):
     arcpy.DeleteField_management("FSVeg_Spatial_WT_Photos", fieldsToDelete)
 
 def deleteFeaturesWithIncorrectSettingIDValues(outputLocation):
-    arcpy.MakeFeatureLayer_management(outputLocation + "/FSVeg_Spatial_WT.gdb" + os.sep + "FSVeg_Spatial_WT_Photos", "FSVeg_Spatial_WT_Photos")
+    arcpy.MakeFeatureLayer_management(outputLocation + os.sep + "FSVeg_Spatial_WT.gdb" + os.sep + "FSVeg_Spatial_WT_Photos", "FSVeg_Spatial_WT_Photos")
     arcpy.SelectLayerByAttribute_management('FSVeg_Spatial_WT_Photos', "NEW_SELECTION", 'PhotoNames IS NULL')
     arcpy.DeleteFeatures_management("FSVeg_Spatial_WT_Photos")
 
 def alterPlotSettingIDFieldName(outputLocation):
-    arcpy.MakeTableView_management(outputLocation + "/FSVeg_Spatial_WT.gdb" + os.sep + "FSVeg_Spatial_WT_Photos", "FSVeg_Spatial_WT_PhotosTable")
-    arcpy.AlterField_management("FSVeg_Spatial_WT_PhotosTable","pl_setting_id", "Setting_ID", "Setting_ID")
+    arcpy.MakeTableView_management(outputLocation + os.sep + "FSVeg_Spatial_WT.gdb" + os.sep + "FSVeg_Spatial_WT_Photos", "FSVeg_Spatial_WT_PhotosTable")
+    arcpy.AlterField_management("FSVeg_Spatial_WT_PhotosTable", "pl_setting_id", "Setting_ID", "Setting_ID")
