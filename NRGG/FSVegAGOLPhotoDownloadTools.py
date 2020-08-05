@@ -8,14 +8,26 @@ import arcpy
 import requests
 
 
-def listStringJoiner(inputList):
-  stringJoinedList =  ",".join(str(itemFromList) for itemFromList in inputList)
-  return stringJoinedList
+def listStringJoiner(inputList, joiner=","):
+    '''listStringJoiner(sequence[list]) -> string
+    Takes an input list and returns a string where each 
+    element in the list is joined together to form a string
+    returned string value. Default value to is to 
+    join with a comma.
+    Example: [1,2,3,4] -> '1,2,3,4'
+    '''
+    stringJoinedList =  joiner.join(str(itemFromList) for itemFromList in inputList)
+    return stringJoinedList
     
 
 def errorMessageGenerator(textForErrorMessage):
+    '''errorMessageGenerator(string) -> string
+    takes and input string and formats it to boiler-plate
+    error message.
+    '''
+
     errorText = '''There was an error {}.
-    If you believe there was an mistake 
+    If you believe there was a mistake 
     entering parameters please try the tool again.
     This program will exit in ten seconds'''.format(textForErrorMessage)
     return errorText
@@ -27,16 +39,16 @@ def urlRequest(inputUrl, *urlParameters):
         return urlurlResponse
     except:
         arcpy.AddMessage(
-            "Unable to make URL request. Check your internet\
-        connection or input URL and try again, this program will exit in 10\
-        seconds."
+            '''Unable to make URL request. Check your internet
+        connection or input URL and try again, this program will exit in 10
+        seconds.'''
         )
         time.sleep(10)
         exit()
 
 def jsonObjectErrorHandling(urlResponse, keyValue, errorMessage):
     try:
-        return json.laods(urlResponse)[keyValue]
+        return json.loads(urlResponse)[keyValue]
     except:
         arcpy.AddMessage(errorMessage)
         time.sleep(10)
@@ -80,8 +92,8 @@ class AGOLFeatureServiceRESTEndPoints:
         self.layerNumber = AGOLFeatureServiceLayerNumber
 
     def layerHasPhotoAttachments(self):
-        errorText = 'when trying to see if the input feature service \
-            has attachments or the input feature service does not allow attachments.'
+        errorText = '''when trying to see if the input feature service 
+            has attachments or the input feature service does not allow attachments.''''
         errorMessage =  errorMessageGenerator(errorText)
         areThereAttachmentsURL = urlRequest(
             "{0}/{1}?&f=json&token={2}".format(self.url, self.layerNumber, self.token)
@@ -94,8 +106,8 @@ class AGOLFeatureServiceRESTEndPoints:
         """Returns the name of the AGOL Feature
          Service from the input AGOL Feature Service URL
         """
-        errorText = 'There was an error trying to retreive \
-        the name of the input feature service'
+        errorText = '''There was an error trying to retreive 
+        the name of the input feature service'''
         errorMessage =  errorMessageGenerator(errorText)
 
         AGOLFeatureServiceNameURL = urlRequest(
@@ -103,7 +115,8 @@ class AGOLFeatureServiceRESTEndPoints:
         )
         AGOLFeatureServiceName = jsonObjectErrorHandling(AGOLFeatureServiceNameURL, "layers", errorMessage)
         AGOLFeatureServiceName = AGOLFeatureServiceName[0]
-        AGOLFeatureServiceName = str(AGOLFeatureServiceName["name"])
+        #AGOLFeatureServiceName = str(AGOLFeatureServiceName["name"])
+        AGOLFeatureServiceName = AGOLFeatureServiceName["name"].encode('utf-8, 'ignore')
         return AGOLFeatureServiceName
 
     def getFeatureServiceObjectIds(self):
@@ -151,7 +164,7 @@ class AGOLFeatureServiceRESTEndPoints:
         featureServiceObjectIDs = urlRequest(urlRequestString, urlEncodedParameters)
         featureServiceObjectIDs = jsonObjectErrorHandling(featureServiceObjectIDs, "objectIds", errorMessage)
         featureServiceObjectIDs = featureServiceObjectIDs[:]
-        featureServiceObjectIDs = listStringJoiner(featureServiceObjectID)
+        featureServiceObjectIDs = listStringJoiner(featureServiceObjectIDs)
         return featureServiceObjectIDs
 
     def queryFeatureServiceObjectIDsforAttachments(self, AGOLfeatureServiceOjbectIDs):
@@ -373,11 +386,13 @@ def writeAttachedPhotosAndMakeDictionaryOfFSVegPhotoNames(
             if row[2] in FSVegGlobalIDDictionary:
                 attachment = row[0]
                 fileNumber = (
-                    str(FSVegGlobalIDDictionary[row[2]][0])
+                    #str(FSVegGlobalIDDictionary[row[2]][0])
+                    FSVegGlobalIDDictionary[row[2]][0].encode('utf-8', 'ignore')
                     + "_plot"
-                    + str(FSVegGlobalIDDictionary[row[2]][1])
+                    #+ str(FSVegGlobalIDDictionary[row[2]][1])
+                    + FSVegGlobalIDDictionary[row[2]][1].encode('utf-8, 'ignore')
                 )
-                attachmentName = str(row[1])
+                attachmentName = row[1].encode('utf-8', 'ignore')
                 stringStartLocation = attachmentName.find("photo_plot")
                 if (
                     attachmentName[stringStartLocation + 10 : stringStartLocation + 11]
@@ -428,7 +443,6 @@ def addPhotoNameFieldAndPopulateFinalFSVegFeatureClass(
     )
     for row in cursor:
         if row[0] in photoNameDictionary:
-            #row[1] = ",".join(photoNameDictionary[row[0]])
             row[1] = ",".join(photoNameDictionary[row[0]])
         cursor.updateRow(row)
     edit.stopOperation()

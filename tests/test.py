@@ -6,6 +6,7 @@ import sys
 sys.path.append(r'C:\Data\FSVeg_Sp_WT_AGOL_PhototDownload\NRGG')
 from FSVegAGOLPhotoDownloadTools import areaOfInterestHandlingForSpatialFilteringAGOLFeatureService 
 from FSVegAGOLPhotoDownloadTools import errorMessageGenerator
+from FSVegAGOLPhotoDownloadTools import listStringJoiner
 
 projectedVerticesList = [
     [-110.74940200956502, 46.89382592506291], 
@@ -39,6 +40,10 @@ AOI = areaOfInterestHandlingForSpatialFilteringAGOLFeatureService(AOIFilePath)
 
 
 class TestFSVegPhotoDowloadTools(unittest.TestCase):
+
+    def test_listStringJoiner(self):
+        stringJoinedListFromFunction = listStringJoiner([1, 2, 3, 4])
+        self.assertEqual(stringJoinedListFromFunction, '1,2,3,4')
 
     def test_errorMessageGenerator(self):
         testErrorMessage = 'There was an error test text.\n    If you believe there was an mistake \n    entering parameters please try the tool again.\n    This program will exit in ten seconds'
