@@ -104,7 +104,6 @@ class Python2RESTAPI:
             return True
 
     def name(self):
-
         """Returns the name of the AGOL Feature
          Service from the input AGOL Feature Service URL
         """
