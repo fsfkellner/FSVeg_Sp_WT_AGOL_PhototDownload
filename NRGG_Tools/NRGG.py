@@ -79,7 +79,7 @@ def generateAGOLToken(AGOLUsername, AGOLPassword):
     AGOLToken = jsonObjectErrorHandling(tokenUrlResponse, "token", errorMessage)
     return AGOLToken
 
-class AGOLFeatureServiceRESTEndPoints:
+class Python2RESTAPI:
     """Leverages the ESRI Rest API to return information about feature services
     and REST URL endpoints for AGOL using Python 2.7 because the FS is still
     using ArcGIS Desktop at the Virtual Data Center
@@ -298,8 +298,9 @@ def downloadAGOLReplicaInFGDB(
             chunk += sizeOfFile / 10
     return fullPathAGOLReplicaOfZipFile
 
-class areaOfInterestHandlingForSpatialFilteringAGOLFeatureService:
-    """A class to handle an area of interest for spatial filtering
+class featureClassForAGOLFiltering:
+    """A class to handle an area of interest 
+    feature class for spatial filtering
     an AGOL feature service
     """
     
