@@ -58,3 +58,6 @@ class TestFSVegPhotoDowloadTools(unittest.TestCase):
         verticesDictionary = AOI.makeAreaOfInterestDictionaryForURLEndPoint(projectedVerticesList)
         self.assertEqual(projectedVerticesDictionary, verticesDictionary)
     
+    def test_jsonObjectHandler(self):
+        
+    

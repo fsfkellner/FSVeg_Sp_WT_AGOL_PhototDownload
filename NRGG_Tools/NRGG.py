@@ -298,7 +298,7 @@ def downloadAGOLReplicaInFGDB(
             chunk += sizeOfFile / 10
     return fullPathAGOLReplicaOfZipFile
 
-class featureClassForAGOLFiltering:
+class FeatureClassForAGOLFiltering:
     """A class to handle an area of interest 
     feature class for spatial filtering
     an AGOL feature service

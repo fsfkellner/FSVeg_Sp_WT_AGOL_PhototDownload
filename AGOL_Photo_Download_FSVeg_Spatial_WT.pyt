@@ -97,7 +97,7 @@ class DownloadAGOLPhotos(object):
         if AGOLFeatureService.layerHasPhotoAttachments():
             if areaofInterest:
                 areaofInterestForAGOL = FeatureClassForAGOLFiltering(areaofInterest)
-                projectedFeatueclassPath = areaofInterestForAGOL.projectFeatureClassToGCSWGS84IntoDefaultWorkspace(areaofInterest)
+                projectedFeatueclassPath = areaofInterestForAGOL.projectFeatureClassToGCSWGS84IntoDefaultWorkspace()
                 areaOfInterestVertices = areaofInterestForAGOL.getVerticesFromProjectedFeatureClassAreaofInterest(projectedFeatueclassPath)
                 dictionaryOfAreaOfInterestVerticesForEndPointURL = areaofInterestForAGOL.makeAreaOfInterestDictionaryForURLEndPoint(areaOfInterestVertices)
                 AGOLFeatureServiceObjectIDs = AGOLFeatureService.getFeatureServiceObjectIdsWithinAreaOfInterest(dictionaryOfAreaOfInterestVerticesForEndPointURL)
