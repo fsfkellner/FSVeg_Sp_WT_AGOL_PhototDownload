@@ -1,4 +1,3 @@
-# import arcpy
 import os
 import zipfile
 import json
@@ -28,21 +27,23 @@ def errorMessageGenerator(textForErrorMessage):
 
     errorText = '''There was an error {}.
     If you believe there was a mistake 
-    entering parameters please try the tool again.
-    This program will exit in ten seconds'''.format(textForErrorMessage)
+    entering parameters please try the tool again.'''.format(textForErrorMessage)
     return errorText
 
 def urlRequest(inputUrl, *urlParameters):
+    '''urlRequest(str, str(dictionary)) -> json object
+    Takes input URL and optional urlencode parameters and returns 
+    a urllib.urlopen() json object. If open fails
+    error handling occurs.'''
+
     try:
         urlurlResponse = urllib.urlopen(inputUrl, "".join(urlParameters)).read()
         return urlurlResponse
     except:
         arcpy.AddMessage(
             '''Unable to make URL request. Check your internet
-        connection or input URL and try again, this program will exit in 10
-        seconds.'''
+        connection or input URL and try again'''
         )
-        time.sleep(10)
         exit()
 
 def jsonObjectErrorHandling(urlResponse, keyValue, errorMessage):
@@ -50,7 +51,6 @@ def jsonObjectErrorHandling(urlResponse, keyValue, errorMessage):
         return json.loads(urlResponse)[keyValue]
     except:
         arcpy.AddMessage(errorMessage)
-        time.sleep(10)
         exit()
 
 
