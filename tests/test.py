@@ -46,13 +46,13 @@ class TestFSVegPhotoDowloadTools(unittest.TestCase):
         self.assertEqual(stringJoinedListFromFunction, '1,2,3,4')
 
     def test_errorMessageGenerator(self):
-        testErrorMessage = 'There was an error test text.\n    If you believe there was an mistake \n    entering parameters please try the tool again.\n    This program will exit in ten seconds'
+        testErrorMessage = 'There was an error test text.\n    If you believe there was a mistake \n    entering parameters please try the tool again.\n    This program will exit in ten seconds'
         errorMessageFromFunction = errorMessageGenerator('test text')
         self.assertEqual(testErrorMessage, errorMessageFromFunction)
 
     def test_getVerticesFromProjectedFeatureClassAreaofInterest(self):
         verticesList = AOI.getVerticesFromProjectedFeatureClassAreaofInterest(projectedTestAOIFilePath)
-        self.assertEqual(projectedVerticesList,  verticesList)
+        self.assertEqual(projectedVerticesList, verticesList)
     
     def test_makeAreaOfInterestDictionaryForURLEndPoint(self):
         verticesDictionary = AOI.makeAreaOfInterestDictionaryForURLEndPoint(projectedVerticesList)
