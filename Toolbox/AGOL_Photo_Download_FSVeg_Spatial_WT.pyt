@@ -81,9 +81,6 @@ class DownloadAGOLPhotos(object):
         """The source code of the tool."""
         import sys
         import arcpy
-        # import urllib
-        # import json
-        # import os
 
         sys.path.append(r'C:\Data')
         import NRGG
@@ -91,7 +88,7 @@ class DownloadAGOLPhotos(object):
             Python2RESTAPI,
             FeatureClassForAGOLFiltering
         )
-        import NRGG.FSVegSpatial_WalkThroughTools as FSVeg
+        import FSVeg
         from NRGG import generateAGOLToken
 
         arcpy.env.overwriteOutput = True
@@ -100,9 +97,9 @@ class DownloadAGOLPhotos(object):
         AGOLPassword = parameters[1].valueAsText
         outputLocation = parameters[2].valueAsText
         areaofInterest = parameters[3].valueAsText
-        AGOLFeatureServiceLayerNumber = 3
+        AGOLFeatureServiceLayerNumber = 1
 
-        AGOLFeatureServiceURL = r'https://services1.arcgis.com/gGHDlz6USftL5Pau/arcgis/rest/services/survey123_a15e8159fac04b6f86e6cee04a785793_stakeholder/FeatureServer'
+        AGOLFeatureServiceURL = r'https://services1.arcgis.com/gGHDlz6USftL5Pau/arcgis/rest/services/service_7ddb092919a543d597e4dd472997ac98/FeatureServer'
 
         AGOLToken = generateAGOLToken(AGOLUsername, AGOLPassword)
         featureService = Python2RESTAPI(
